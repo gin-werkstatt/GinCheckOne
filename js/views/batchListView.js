@@ -41,14 +41,19 @@ export async function renderBatchList(main) {
 
   const batches = await db.getAllBatches();
   const active = batches.filter((b) => b.status !== 'completed');
-  const done = batches.filter((b) => b.status === 'completed');
-  const ordered = [...active, ...done];
 
-  if (ordered.length === 0) {
+  if (active.length === 0) {
+    const hasCompleted = batches.length > 0;
     main.append(
       el('div', { class: 'empty-state' }, [
         el('span', { class: 'icon-badge', html: flaskIconSvg(28) }),
-        el('div', {}, 'Noch kein Batch gestartet.'),
+        el(
+          'div',
+          {},
+          hasCompleted
+            ? 'Kein Batch gerade in Bearbeitung. Abgeschlossene Batches findest du im Archiv.'
+            : 'Noch kein Batch gestartet.'
+        ),
         el(
           'button',
           { class: 'btn primary', style: 'margin-top:16px;', onclick: () => navigate('#/batch/neu') },
@@ -59,7 +64,7 @@ export async function renderBatchList(main) {
     return;
   }
 
-  for (const batch of ordered) {
+  for (const batch of active) {
     main.append(renderBatchCard(batch));
   }
 }
