@@ -1,0 +1,7 @@
+.DS_Store
+Thumbs.db
+*.log
+
+# Geschäftsgeheimnisse (z. B. echte Rezepturen) – nur lokal, nie ins Repo
+# oder auf einen anderen Webspace hochladen.
+/private/

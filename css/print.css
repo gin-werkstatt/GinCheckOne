@@ -1,0 +1,29 @@
+@media print {
+  header.topbar,
+  nav.bottom-nav,
+  .fab,
+  .no-print {
+    display: none !important;
+  }
+  main {
+    padding: 0;
+    max-width: none;
+  }
+  body, #app {
+    background: #fff;
+    color: #000;
+  }
+  @page {
+    margin: 14mm 12mm;
+  }
+  .print-item-block {
+    break-inside: avoid;
+  }
+  .print-step-heading {
+    break-after: avoid;
+  }
+  .print-photo-row img {
+    width: 70px;
+    height: 70px;
+  }
+}
