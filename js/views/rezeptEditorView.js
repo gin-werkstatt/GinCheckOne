@@ -1,7 +1,8 @@
 import * as db from '../db.js';
 import { el, confirmDialog } from '../util.js';
 import { setHeader, navigate, goBack, showToast } from '../ui.js';
-import { cameraIconSvg, closeIconSvg } from '../icons.js';
+import { cameraIconSvg, closeIconSvg, downloadIconSvg } from '../icons.js';
+import { recipeToCsv } from '../csv.js';
 import {
   STEP_ORDER,
   STEP_LABELS,
@@ -87,6 +88,26 @@ export async function renderRezeptEditor(main, id) {
               },
             },
             'Rezept duplizieren'
+          ),
+          el(
+            'button',
+            {
+              class: 'btn secondary block',
+              onclick: () => {
+                const csv = recipeToCsv(recipe);
+                const filename = (recipe.name.trim() || 'rezept').replace(/[^\w\-äöüÄÖÜß]+/g, '_') + '.csv';
+                const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                document.body.append(a);
+                a.click();
+                a.remove();
+                setTimeout(() => URL.revokeObjectURL(url), 5000);
+              },
+            },
+            [el('span', { html: downloadIconSvg(18) }), 'Als CSV exportieren']
           ),
           el(
             'button',

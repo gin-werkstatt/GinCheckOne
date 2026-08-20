@@ -132,6 +132,42 @@ export function buildRecipeFromCsvRows(name, beschreibung, rows) {
   return recipe;
 }
 
+function escapeCsvField(value, delimiter) {
+  const str = value == null ? '' : String(value);
+  if (str.includes(delimiter) || str.includes('"') || str.includes('\n') || str.includes('\r')) {
+    return '"' + str.replace(/"/g, '""') + '"';
+  }
+  return str;
+}
+
+// Erzeugt aus einem Rezept eine CSV-Datei im gleichen Format wie der Import
+// (Spalten: Schritt, Abschnitt, Punkt, Einheit, Foto), eine Zeile pro
+// Checklistenpunkt - ein erneuter Import dieser Datei ergibt wieder dieselbe
+// Struktur.
+export function recipeToCsv(recipe) {
+  const delimiter = ';';
+  const lines = ['Schritt;Abschnitt;Punkt;Einheit;Foto'];
+  for (const key of STEP_ORDER) {
+    const stepLabel = STEP_LABELS[key];
+    for (const section of recipe.steps[key].sections) {
+      for (const item of section.items) {
+        lines.push(
+          [
+            stepLabel,
+            section.title || '',
+            item.label,
+            item.wantsValue ? item.valueUnit || '' : '',
+            item.wantsPhoto ? 'ja' : '',
+          ]
+            .map((v) => escapeCsvField(v, delimiter))
+            .join(delimiter)
+        );
+      }
+    }
+  }
+  return lines.join('\n');
+}
+
 export function csvTemplate() {
   const header = 'Schritt;Abschnitt;Punkt;Einheit;Foto';
   const example = [
