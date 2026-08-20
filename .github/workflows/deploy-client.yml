@@ -11,19 +11,16 @@ name: Client auf Netcup ausrollen
 # SFTP-Versuch übrig geblieben (NETCUP_SFTP_...), enthalten inhaltlich aber
 # jetzt die FTP-Zugangsdaten - Umbenennen würde nur unnötigen Aufwand
 # bedeuten, ist aber jederzeit möglich.
+#
+# Stand: der Datei-Transfer selbst schlägt aktuell mit ECONNRESET fehl
+# (vermutlich Firewall/NAT bei Netcup blockiert den passiven FTP-Datenkanal
+# für GitHub-Actions-Server). Deshalb bewusst OHNE automatischen
+# push-Auslöser, damit nicht jede Änderung einen roten, fehlgeschlagenen
+# Lauf erzeugt - manuell über "Run workflow" bleibt er nutzbar, z. B. für
+# einen erneuten Versuch mit protocol: ftps oder nach Rücksprache mit dem
+# Netcup-Support zum passiven Port-Bereich.
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'index.html'
-      - 'manifest.webmanifest'
-      - 'sw.js'
-      - '.htaccess'
-      - 'Logo-Ginwerkstatt.svg'
-      - 'css/**'
-      - 'js/**'
-      - 'icons/**'
   workflow_dispatch:
 
 jobs:
