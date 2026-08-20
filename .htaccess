@@ -1,0 +1,10 @@
+# Verhindert, dass Browser die App-Einstiegsdatei und den Service Worker
+# zwischenspeichern. Beide steuern, ob eine neue Version der App erkannt
+# wird - ohne diese Regel kann es sein, dass nach einem Update nicht sofort
+# der neue Stand geladen wird (der eigentliche App-Code in js/ und css/ wird
+# über den Service Worker selbst versioniert, siehe sw.js/CACHE_VERSION).
+<IfModule mod_headers.c>
+    <FilesMatch "^(index\.html|sw\.js|manifest\.webmanifest)$">
+        Header set Cache-Control "no-cache"
+    </FilesMatch>
+</IfModule>
