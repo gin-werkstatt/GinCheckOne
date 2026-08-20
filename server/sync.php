@@ -89,7 +89,9 @@ function fetch_changed(PDO $pdo, string $table, ?string $since): array {
     } else {
         $stmt = $pdo->query("SELECT data FROM {$table} WHERE deleted_at IS NULL");
     }
-    return array_map(fn($row) => json_decode($row['data'], true), $stmt->fetchAll());
+    return array_map(function ($row) {
+        return json_decode($row['data'], true);
+    }, $stmt->fetchAll());
 }
 
 function fetch_deleted_ids(PDO $pdo, string $table, ?string $since): array {
