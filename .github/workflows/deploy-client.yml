@@ -1,10 +1,16 @@
 name: Client auf Netcup ausrollen
 
-# Lädt nur den Client-Teil (index.html, css/, js/, icons/, ...) per SFTP nach
+# Lädt nur den Client-Teil (index.html, css/, js/, icons/, ...) per FTP nach
 # gin-werkstatt.de/GinCheckOne hoch, sobald sich an diesen Dateien auf "main"
 # etwas ändert. Der PHP-Server-Teil (server/) wird bewusst NICHT mit
 # ausgerollt - server/config.php liegt nur auf dem Webspace (nicht im Repo)
 # und darf durch ein automatisches Deployment nicht angefasst werden.
+#
+# Läuft über klassisches FTP, weil SFTP für diesen Netcup-Zugang nicht
+# funktioniert (getestet). Die Secret-Namen sind noch von einem früheren
+# SFTP-Versuch übrig geblieben (NETCUP_SFTP_...), enthalten inhaltlich aber
+# jetzt die FTP-Zugangsdaten - Umbenennen würde nur unnötigen Aufwand
+# bedeuten, ist aber jederzeit möglich.
 
 on:
   push:
@@ -33,13 +39,14 @@ jobs:
           cp index.html manifest.webmanifest sw.js .htaccess Logo-Ginwerkstatt.svg deploy/
           cp -r css js icons deploy/
 
-      - name: Per SFTP hochladen
-        uses: wlixcc/SFTP-Deploy-Action@v1.2.4
+      - name: Per FTP hochladen
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
           server: ${{ secrets.NETCUP_SFTP_HOST }}
           port: ${{ secrets.NETCUP_SFTP_PORT }}
           username: ${{ secrets.NETCUP_SFTP_USER }}
           password: ${{ secrets.NETCUP_SFTP_PASSWORD }}
-          local_path: './deploy/*'
-          remote_path: ${{ secrets.NETCUP_SFTP_REMOTE_PATH }}
-          sftp_only: true
+          protocol: ftp
+          local-dir: ./deploy/
+          server-dir: ${{ secrets.NETCUP_SFTP_REMOTE_PATH }}
+          dangerous-clean-slate: false
