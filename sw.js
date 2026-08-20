@@ -1,6 +1,6 @@
 // Einfacher Service Worker: cached das App-Gerüst beim ersten Besuch, damit
 // die App danach auch ganz ohne Internetverbindung startet.
-const CACHE_VERSION = 'v9';
+const CACHE_VERSION = 'v10';
 const CACHE_NAME = 'gin-produktion-' + CACHE_VERSION;
 
 const CORE_ASSETS = [

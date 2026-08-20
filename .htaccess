@@ -8,3 +8,10 @@
         Header set Cache-Control "no-cache"
     </FilesMatch>
 </IfModule>
+
+# Der Server kennt die Dateiendung .webmanifest sonst nicht und liefert sie
+# ganz ohne Content-Type aus - dadurch erkennen manche Browser die Datei
+# nicht als gültiges Web-App-Manifest ("Zum Home-Bildschirm hinzufügen").
+<IfModule mod_mime.c>
+    AddType application/manifest+json .webmanifest
+</IfModule>

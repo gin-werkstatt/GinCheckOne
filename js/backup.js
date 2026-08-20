@@ -53,23 +53,36 @@ export async function buildBackupZip() {
 }
 
 // Löst je nach Möglichkeit des Browsers die native Teilen-Funktion (iOS) oder
-// einen Download-Link (Desktop) aus.
+// einen Download-Link (Desktop) aus. Manche Browser (z. B. Chrome am Desktop)
+// melden zwar per canShare(), dass Teilen grundsätzlich ginge, lehnen den
+// eigentlichen Teilen-Aufruf dann aber ab (z. B. weil kein Freigabeziel für
+// .zip-Dateien registriert ist) - in diesem Fall auf den normalen Download
+// zurückfallen, statt einen Fehler zu zeigen.
 export async function shareOrDownloadBackup(blob) {
   const filename = `gin-backup-${dateStamp()}.zip`;
   const file = new File([blob], filename, { type: 'application/zip' });
 
   if (navigator.canShare && navigator.canShare({ files: [file] })) {
-    await navigator.share({ files: [file], title: filename });
-  } else {
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    document.body.append(a);
-    a.click();
-    a.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 5000);
+    try {
+      await navigator.share({ files: [file], title: filename });
+      setLastBackupAt(new Date().toISOString());
+      return;
+    } catch (err) {
+      if (err && err.name === 'AbortError') {
+        throw new Error('Abgebrochen.');
+      }
+      // sonst: unten auf den Download-Link zurückfallen
+    }
   }
+
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.append(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
   setLastBackupAt(new Date().toISOString());
 }
 
