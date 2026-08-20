@@ -1,7 +1,8 @@
 import * as db from './db.js';
 import { el } from './util.js';
-import { initUi } from './ui.js';
-import { flaskIconSvg, archiveIconSvg, bookIconSvg, downloadIconSvg, warningIconSvg } from './icons.js';
+import { initUi, setSyncActive } from './ui.js';
+import { autoSyncIfNeeded } from './sync.js';
+import { flaskIconSvg, archiveIconSvg, bookIconSvg, downloadIconSvg, warningIconSvg, syncIconSvg } from './icons.js';
 import { renderBatchList } from './views/batchListView.js';
 import { renderArchiv } from './views/archivView.js';
 import { renderRezepteList } from './views/rezepteListView.js';
@@ -15,15 +16,17 @@ import { renderBackup } from './views/backupView.js';
 
 const appEl = document.getElementById('app');
 const header = el('header', { class: 'topbar' });
+const syncIndicator = el('span', { class: 'sync-indicator', title: 'Synchronisiert…', html: syncIconSvg(15) });
 const brandRow = el('div', { class: 'brand-row' }, [
   el('img', { class: 'brand-logo', src: 'Logo-Ginwerkstatt.svg', alt: 'Ginwerkstatt' }),
+  syncIndicator,
 ]);
 const titleRow = el('div', { class: 'title-row' });
 header.append(brandRow, titleRow);
 const main = el('main');
 const nav = el('nav', { class: 'bottom-nav' });
 appEl.append(header, main, nav);
-initUi(titleRow);
+initUi(titleRow, syncIndicator);
 
 const TABS = [
   { key: 'batches', label: 'Batches', icon: flaskIconSvg, href: '#/batches' },
@@ -115,6 +118,13 @@ async function router() {
 
 window.addEventListener('hashchange', router);
 
+function triggerAutoSync() {
+  autoSyncIfNeeded({
+    onSyncStart: () => setSyncActive(true),
+    onSyncEnd: () => setSyncActive(false),
+  });
+}
+
 async function init() {
   await router();
 
@@ -127,6 +137,12 @@ async function init() {
       location.reload();
     });
   }
+
+  triggerAutoSync();
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') triggerAutoSync();
+  });
+  window.addEventListener('online', triggerAutoSync);
 }
 
 init();

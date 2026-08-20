@@ -162,3 +162,31 @@ export async function syncNow() {
     pulled: (result.recipes || []).length + (result.batches || []).length + photosToDownload.length,
   };
 }
+
+let autoSyncInFlight = false;
+let lastAutoSyncAttempt = 0;
+const AUTO_SYNC_MIN_INTERVAL_MS = 60 * 1000;
+
+// Synchronisiert automatisch im Hintergrund, z. B. beim Öffnen der App oder
+// wenn wieder Internet da ist - ohne Fehlermeldung, falls es nicht klappt
+// (z. B. kein Netz in der Werkstatt), damit das die App nicht stört.
+export async function autoSyncIfNeeded({ onSyncStart, onSyncEnd } = {}) {
+  if (autoSyncInFlight || !navigator.onLine || !isSyncConfigured()) {
+    return;
+  }
+  const now = Date.now();
+  if (now - lastAutoSyncAttempt < AUTO_SYNC_MIN_INTERVAL_MS) {
+    return;
+  }
+  lastAutoSyncAttempt = now;
+  autoSyncInFlight = true;
+  onSyncStart?.();
+  try {
+    await syncNow();
+  } catch (err) {
+    console.warn('Automatische Synchronisierung fehlgeschlagen:', err.message);
+  } finally {
+    autoSyncInFlight = false;
+    onSyncEnd?.();
+  }
+}

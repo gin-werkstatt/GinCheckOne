@@ -3,9 +3,18 @@
 import { el } from './util.js';
 
 let headerEl = null;
+let syncIndicatorEl = null;
 
-export function initUi(header) {
+export function initUi(header, syncIndicator) {
   headerEl = header;
+  syncIndicatorEl = syncIndicator || null;
+}
+
+// Zeigt/versteckt den kleinen Sync-Hinweis in der Kopfzeile (für die
+// automatische Hintergrund-Synchronisierung - bewusst unauffällig, kein
+// Toast, damit sie beim normalen Arbeiten nicht stört).
+export function setSyncActive(active) {
+  if (syncIndicatorEl) syncIndicatorEl.classList.toggle('active', active);
 }
 
 export function setHeader({ title, back, action }) {
