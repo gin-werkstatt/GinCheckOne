@@ -9,3 +9,11 @@ Thumbs.db
 # Projekt-Anweisungen für Claude Code – nur lokal, nicht im öffentlichen Repo.
 /CLAUDE.md
 /Anforderungen.md
+/Speicher-Konzepte.md
+
+# Echte Server-Zugangsdaten – nur lokal, nie ins Repo.
+/server/config.php
+
+# Hochgeladene Fotos landen nur auf dem echten Webspace, nie im Repo.
+/server/uploads/*
+!/server/uploads/.htaccess

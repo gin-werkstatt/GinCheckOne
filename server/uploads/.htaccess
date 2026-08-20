@@ -1,0 +1,10 @@
+# Verhindert direkten Zugriff auf die Fotodateien ohne Zugangscode. Fotos
+# werden ausschließlich über photo_download.php ausgeliefert (dort wird der
+# Zugangscode geprüft).
+<IfModule mod_authz_core.c>
+    Require all denied
+</IfModule>
+<IfModule !mod_authz_core.c>
+    Order deny,allow
+    Deny from all
+</IfModule>

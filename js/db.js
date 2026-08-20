@@ -3,7 +3,7 @@
 // Bauen läuft.
 
 const DB_NAME = 'distillerei-db';
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 
 let dbPromise = null;
 
@@ -29,6 +29,14 @@ function openDatabase() {
         photosStore.createIndex('batchId', 'batchId');
       } else {
         photosStore = tx.objectStore('photos');
+      }
+
+      // Merkt sich lokal gelöschte Rezepte/Batches/Fotos, damit eine Löschung
+      // bei der Server-Synchronisierung auf andere Geräte übertragen werden
+      // kann (sonst würde ein gelöschter Eintrag beim nächsten Abgleich von
+      // einem anderen Gerät wieder auftauchen).
+      if (!db.objectStoreNames.contains('tombstones')) {
+        db.createObjectStore('tombstones', { keyPath: 'id' });
       }
 
       // Ehemals hieß das Feld "chargeId" (Charge -> Batch umbenannt). Bereits
@@ -92,11 +100,25 @@ export async function getRecipe(id) {
 
 export async function saveRecipe(recipe) {
   recipe.updatedAt = new Date().toISOString();
+  return putRecipe(recipe);
+}
+
+// Speichert ein Rezept, ohne "updatedAt" zu verändern (für den Server-Sync,
+// der den Zeitstempel des jeweils anderen Geräts unverändert übernehmen muss).
+export async function putRecipe(recipe) {
   await withStore('recipes', 'readwrite', (store) => reqToPromise(store.put(recipe)));
   return recipe;
 }
 
 export async function deleteRecipe(id) {
+  await withStore('recipes', 'readwrite', (store) => reqToPromise(store.delete(id)));
+  await addTombstone('recipe', id);
+}
+
+// Entfernt ein Rezept lokal, ohne eine neue Lösch-Markierung anzulegen (wird
+// beim Sync verwendet, um eine auf einem anderen Gerät erfolgte Löschung zu
+// übernehmen).
+export async function removeRecipeLocally(id) {
   return withStore('recipes', 'readwrite', (store) => reqToPromise(store.delete(id)));
 }
 
@@ -117,11 +139,26 @@ export async function getBatch(id) {
 }
 
 export async function saveBatch(batch) {
+  batch.updatedAt = new Date().toISOString();
+  return putBatch(batch);
+}
+
+// Speichert einen Batch, ohne "updatedAt" zu verändern (für den Server-Sync).
+export async function putBatch(batch) {
   await withStore('batches', 'readwrite', (store) => reqToPromise(store.put(batch)));
   return batch;
 }
 
 export async function deleteBatch(id) {
+  await deletePhotosByBatch(id);
+  await withStore('batches', 'readwrite', (store) => reqToPromise(store.delete(id)));
+  await addTombstone('batch', id);
+}
+
+// Entfernt einen Batch lokal, ohne eine neue Lösch-Markierung anzulegen (wird
+// beim Sync verwendet, um eine auf einem anderen Gerät erfolgte Löschung zu
+// übernehmen).
+export async function removeBatchLocally(id) {
   await deletePhotosByBatch(id);
   return withStore('batches', 'readwrite', (store) => reqToPromise(store.delete(id)));
 }
@@ -144,6 +181,14 @@ export async function getPhotosByBatch(batchId) {
 }
 
 export async function deletePhoto(id) {
+  await withStore('photos', 'readwrite', (store) => reqToPromise(store.delete(id)));
+  await addTombstone('photo', id);
+}
+
+// Entfernt ein Foto lokal, ohne eine neue Lösch-Markierung anzulegen (wird
+// beim Sync verwendet, um eine auf einem anderen Gerät erfolgte Löschung zu
+// übernehmen).
+export async function removePhotoLocally(id) {
   return withStore('photos', 'readwrite', (store) => reqToPromise(store.delete(id)));
 }
 
@@ -151,6 +196,35 @@ export async function deletePhotosByBatch(batchId) {
   const photos = await getPhotosByBatch(batchId);
   return withStore('photos', 'readwrite', (store) => {
     for (const p of photos) store.delete(p.id);
+  });
+}
+
+// ---------- Lösch-Markierungen (für den Server-Sync) ----------
+
+export async function addTombstone(type, entityId) {
+  return withStore('tombstones', 'readwrite', (store) =>
+    reqToPromise(
+      store.put({ id: `${type}:${entityId}`, type, entityId, deletedAt: new Date().toISOString() })
+    )
+  );
+}
+
+export async function getTombstones(type) {
+  const all = await withStore('tombstones', 'readonly', (store) => reqToPromise(store.getAll()));
+  return all.filter((t) => t.type === type);
+}
+
+export async function clearTombstones(type, entityIds) {
+  const idsToRemove = new Set(entityIds);
+  return withStore('tombstones', 'readwrite', (store) => {
+    store.openCursor().onsuccess = (e) => {
+      const cursor = e.target.result;
+      if (!cursor) return;
+      if (cursor.value.type === type && idsToRemove.has(cursor.value.entityId)) {
+        cursor.delete();
+      }
+      cursor.continue();
+    };
   });
 }
 

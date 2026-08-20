@@ -90,6 +90,16 @@ export function restoreIconSvg(size = 20) {
   );
 }
 
+export function syncIconSvg(size = 20) {
+  return svgIcon(
+    `<path d="M4 12a8 8 0 0 1 13.7-5.7L20 8.5"></path>
+     <path d="M20 4v4.5h-4.5"></path>
+     <path d="M20 12a8 8 0 0 1-13.7 5.7L4 15.5"></path>
+     <path d="M4 20v-4.5h4.5"></path>`,
+    size
+  );
+}
+
 export function warningIconSvg(size = 20) {
   return svgIcon(
     `<path d="M12 3.3 21.3 20H2.7Z"></path>
