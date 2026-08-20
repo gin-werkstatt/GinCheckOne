@@ -1,0 +1,45 @@
+name: Client auf Netcup ausrollen
+
+# Lädt nur den Client-Teil (index.html, css/, js/, icons/, ...) per SFTP nach
+# gin-werkstatt.de/GinCheckOne hoch, sobald sich an diesen Dateien auf "main"
+# etwas ändert. Der PHP-Server-Teil (server/) wird bewusst NICHT mit
+# ausgerollt - server/config.php liegt nur auf dem Webspace (nicht im Repo)
+# und darf durch ein automatisches Deployment nicht angefasst werden.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'index.html'
+      - 'manifest.webmanifest'
+      - 'sw.js'
+      - '.htaccess'
+      - 'Logo-Ginwerkstatt.svg'
+      - 'css/**'
+      - 'js/**'
+      - 'icons/**'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Code auschecken
+        uses: actions/checkout@v4
+
+      - name: Nur Client-Dateien zusammenstellen
+        run: |
+          mkdir -p deploy
+          cp index.html manifest.webmanifest sw.js .htaccess Logo-Ginwerkstatt.svg deploy/
+          cp -r css js icons deploy/
+
+      - name: Per SFTP hochladen
+        uses: wlixcc/SFTP-Deploy-Action@v1.2.4
+        with:
+          server: ${{ secrets.NETCUP_SFTP_HOST }}
+          port: ${{ secrets.NETCUP_SFTP_PORT }}
+          username: ${{ secrets.NETCUP_SFTP_USER }}
+          password: ${{ secrets.NETCUP_SFTP_PASSWORD }}
+          local_path: './deploy/*'
+          remote_path: ${{ secrets.NETCUP_SFTP_REMOTE_PATH }}
+          sftp_only: true
